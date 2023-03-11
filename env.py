@@ -5,35 +5,40 @@ def create_map():
     
     pygame.init()
 
-    # tab dimensions
-    TAB_WIDTH = 600
-    TAB_HEIGHT = 250
-
-    # Create the Pygame window
-    window = pygame.display.set_mode((TAB_WIDTH, TAB_HEIGHT))
+    
+    map_width = 600
+    map_height = 250
+   
+    window = pygame.display.set_mode((map_width, map_height))
     pygame.display.set_caption("Map")
 
-    # Define the colors
-    BACKGROUND_COLOR = pygame.Color("red")
-    OBSTACLE_COLOR = pygame.Color("black")
-    CLEARANCE_COLOR = pygame.Color("white")
+    bg_color = pygame.Color("black")
+    obs_color = pygame.Color("red")
+    padding_color = pygame.Color("white")
 
     # Create the surface for the obstacle course
-    surface = pygame.Surface((TAB_WIDTH, TAB_HEIGHT))
-    # Fill the surface with the background color
-    surface.fill(BACKGROUND_COLOR)
+    surface = pygame.Surface((map_width, map_height))
+    surface.fill(bg_color)
+
+    rect_x, rect_y, rect_width, rect_height = 30, 50, 170, 170
+    circle_x, circle_y, circle_radius = 260, 60, 55
+    rect2_x, rect2_y, rect2_width, rect2_height = 260, 140, 190, 70
+    rect3_x, rect3_y, rect3_width, rect3_height = 470, 30, 70, 200
+    clearance = 10
 
     obstacles = []
-    obstacles.append(pygame.draw.rect(surface,CLEARANCE_COLOR,(30-5,TAB_HEIGHT-50-175-5,170+10,170+10)))
-    obstacles.append(pygame.draw.circle(surface,CLEARANCE_COLOR,(260,TAB_HEIGHT-60),55))
-    obstacles.append(pygame.draw.rect(surface,CLEARANCE_COLOR,(260-5,TAB_HEIGHT-140-70-5,190+10,70+10)))
-    obstacles.append(pygame.draw.rect(surface,CLEARANCE_COLOR,(470-5,TAB_HEIGHT-30-200-5,70+10,200+10)))
+
+    # Add obstacles to the list
+    obstacles.append(pygame.draw.rect(surface, padding_color, (rect_x-clearance, rect_y-clearance, rect_width+2*clearance, rect_height+2*clearance)))
+    obstacles.append(pygame.draw.circle(surface, padding_color, (circle_x, circle_y), circle_radius+clearance))
+    obstacles.append(pygame.draw.rect(surface, padding_color, (rect2_x-clearance, rect2_y-clearance, rect2_width+2*clearance, rect2_height+2*clearance)))
+    obstacles.append(pygame.draw.rect(surface, padding_color, (rect3_x-clearance, rect3_y-clearance, rect3_width+2*clearance, rect3_height+2*clearance)))
 
     # Draw the obstacles on the surface
-    obstacles.append(pygame.draw.rect(surface, OBSTACLE_COLOR, (30, TAB_HEIGHT-50-170 ,170 ,170)))  #x-coordinate, y-coordinate,width and height
-    obstacles.append(pygame.draw.circle(surface, OBSTACLE_COLOR, (260,TAB_HEIGHT-60),50))
-    obstacles.append(pygame.draw.rect(surface, OBSTACLE_COLOR, (260,TAB_HEIGHT-140-70,190,70)))
-    obstacles.append(pygame.draw.rect(surface, OBSTACLE_COLOR, (470,TAB_HEIGHT-30-200 ,70 ,200))) 
+    obstacles.append(pygame.draw.rect(surface, obs_color, (rect_x, rect_y, rect_width, rect_height)))
+    obstacles.append(pygame.draw.circle(surface, obs_color, (circle_x, circle_y), circle_radius))
+    obstacles.append(pygame.draw.rect(surface, obs_color, (rect2_x, rect2_y, rect2_width, rect2_height)))
+    obstacles.append(pygame.draw.rect(surface, obs_color, (rect3_x, rect3_y, rect3_width, rect3_height)))
 
     # Blit the surface onto the Pygame window
     window.blit(surface, (0, 0))
@@ -42,20 +47,22 @@ def create_map():
 
     for obstacle in obstacles:
          for x in range(obstacle.left, obstacle.right):
-             for y in range(obstacle.bottom, obstacle.top, -1):  # reverse y-coordinate to start from bottom left
+             for y in range(obstacle.bottom, obstacle.top, -1):
                 obstacle_space.append((x, y))
     
-    for x in range(0,TAB_WIDTH):
-        for y in range(0, TAB_HEIGHT):
-            if(x>=25 and x<=205 and y>= 45 and y<=225):
-                obstacle_space.append([x,TAB_HEIGHT-y])  # reverse y-coordinate to start from bottom left
-            elif(((x-260)**2 + (y-60)**2) <= 55**2):
-                obstacle_space.append([x,TAB_HEIGHT-y])  # reverse y-coordinate to start from bottom left
-            elif(x>=255 and x<=455 and y>=135 and y<=215):
-                obstacle_space.append([x,TAB_HEIGHT-y])  # reverse y-coordinate to start from bottom left
-            elif(x>=465 and x<=545 and y>=25 and y<=235):
-                obstacle_space.append([x,TAB_HEIGHT-y])  # reverse y-coordinate to start from bottom left
-    
+    # Check for collision with obstacles
+    for x in range(0,map_width):
+        for y in range(0, map_height):
+            if x >= rect_x-clearance and x <= rect_x+rect_width+clearance and y >= rect_y-clearance and y <= rect_y+rect_height+clearance:
+                obstacle_space.append([x,map_height-y])
+            elif (x - circle_x)**2 + (y - circle_y)**2 <= (circle_radius+clearance)**2:
+                obstacle_space.append([x,map_height-y])
+            elif x >= rect2_x-clearance and x <= rect2_x+rect2_width+clearance and y >= rect2_y-clearance and y <= rect2_y+rect2_height+clearance:
+                obstacle_space.append([x,map_height-y])
+            elif x >= rect3_x-clearance and x <= rect3_x+rect3_width+clearance and y >= rect3_y-clearance and y <= rect3_y+rect3_height+clearance:
+                obstacle_space.append([x,map_height-y])
+
+
     pygame.quit()
     return obstacle_space 
 

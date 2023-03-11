@@ -6,7 +6,6 @@ import numpy as np
 sys.setrecursionlimit(100000)
 
 clearance = 5
-k=2
 tab_height = 250
 tab_width = 600
 
@@ -21,24 +20,24 @@ def obstacle_space(x,y):
     s = 50
 
     # circle
-    x_circ = 30
-    y_circ = 30
-    r_circ = 10
+    x_circ = 100
+    y_circ = 100
+    r_circ = 50
     
     # rhombus
     x2_c, y2_c = 470, 70 
     s2 = 10
 
     # rhombus
-    #if abs(x - x2_c) / s2 + abs(y - y2_c) / s2 <= 1:
-        #c=1
+    if abs(x - x2_c - clearance) / s2 + abs(y - y2_c - clearance) / s2 <= 1:
+        c=1
     
     # circle
-    if ((x-math.ceil(x_circ))**2+math.ceil(y -(y_circ))**2-math.ceil(r_circ)**2)<=0:
+    if ((x-math.ceil(x_circ))**2 + math.ceil(y -(y_circ))**2 - math.ceil(r_circ + clearance)**2)<=0:
         c=1
     
     # square
-    if(y <= y_c + s/2 and y >= y_c - s/2 and x <= x_c + s/2 and x >= x_c - s/2):
+    if(y <= y_c + s/2 + clearance and y >= y_c - s/2 - clearance and x <= x_c + s/2 + clearance and x >= x_c - s/2 - clearance):
         c = 1
 
     return c
@@ -108,7 +107,7 @@ class Dijkstra:
         path.append(self.start)
         path.reverse()
 
-        self.vis(path, self.visited)
+        self.vis(path, self.visited, self.obstacles)
         return path
     
     def neighbors(self, coord):
@@ -180,13 +179,14 @@ class Dijkstra:
         cost = 1.4 
         return neighbor, cost
     
-    def vis(self, path, visited):
+    def vis(self, path, visited, occupied):
         
         pygame.init()
 
         #Defining the colors
         Black = [0, 0, 0]
         red = [255, 0, 0]
+        green = [0, 255, 0]
         Blue = [0, 100, 255]
         White = [255, 255, 255]
 
@@ -210,27 +210,34 @@ class Dijkstra:
         #my_list2 = np.array(occupied)
         #occupied = my_list2*k
         
+        for i in occupied:
+            pygame.draw.rect(surface, Blue, [i[0] - clearance ,tab_height - i[1] - clearance , 1,1])
+            window.blit(surface,(0,0))
+            pygame.display.update()
+
+        for i in occupied:
+            pygame.draw.rect(surface, red, [i[0] ,tab_height - i[1] , 1,1])
+            window.blit(surface,(0,0))
+            pygame.display.update()
+
 
             #Printing the visited nodes
         for i in visited:
-            pygame.draw.rect(surface, White, [i[0], tab_height - i[1],k,k])
+            pygame.draw.rect(surface, White, [i[0], tab_height - i[1],1,1])
             window.blit(surface,(0,0))
             pygame.display.update()
         #pygame.display.flip()
 
             #Printing the path
         for j in path:
-            pygame.draw.rect(surface, red, [j[0], tab_height - j[1], k,k])
+            pygame.draw.rect(surface, green, [j[0], tab_height - j[1], 1,1])
             window.blit(surface,(0,0))
             pygame.display.update()
         #pygame.display.flip()
 
-        # for i in occupied:
-        #     pygame.draw.rect(surface, Blue, [i[0],tab_height - i[1],k,k])
-        #     #pygame.draw.rect(surface, Blue, [150,150,50,50])
-        #     window.blit(surface,(0,0))
-        #     pygame.display.update()
-        #pygame.display.flip()
+        
+        
+        pygame.display.flip()
 
         window.blit(surface,(0,0))
 

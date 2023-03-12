@@ -1,55 +1,74 @@
 import heapq
 import sys
-import math
-import pygame
 import numpy as np
+import cv2
+import time
+import math
 sys.setrecursionlimit(100000)
 
-clearance = 5
+
 tab_height = 250
 tab_width = 600
 
-def obstacle_space(x,y, pad):
+def wall(x,y,clearance):
+    if ((x >= (tab_width - clearance)) or (y >= (tab_height - clearance)) or (x <= clearance) or (y <= clearance)):
+        return True, x,y
+    return False, None
 
-    c = 0
+def rect_bottom(x,y,clearance):
+    if ((y >= 0) and (x <= (tab_height - 100 + clearance)) and (x >= (100 - clearance)) and (y <= (100 + clearance))):
+        return True, x,y
+    return False, None
 
-    # square
-    y_c = 50
-    x_c = 150
-    s1 = 50
+def rect_top(x,y,clearance):
+    if (y <= tab_height) and (x >= (100 - clearance)) and (y >= (tab_height - 100 - clearance)) and (x <= (tab_height - 100 + clearance)): 
+        return True, x,y
+    return False, None
 
-    # circle
-    x_circ = 100
-    y_circ = 100
-    r_circ = 50
+def hexagon(x,y, clearance):
+    # inequalities equation of hexagon edges 
+    # ratio of the radius of a circumscribed circle to the length of the side of a regular hexagon
+    a = 1 / math.sqrt(3) 
+
+    if( (y <= (-a*x + clearance + 37321/100)) and \
+        (y >= (a*x - clearance - 12321/100)) and \
+        (y >= (-a*x - clearance + 22321/100)) and \
+        (y <= (a*x + clearance + 2679/100)) and \
+        (x <= (clearance + 7299/20)) and \
+        (x >= (- clearance + 235))) :
+        
+            return True, x,y
+    return False, None
+        
+def triangle(x,y,clearance):
+    # slope of isoceles edges
+    m = math.tan(1.107)
+
+    if  (x >= (2*230 - clearance)) and\
+        (y <= (-m*x + clearance + 1145)) and \
+        (y >= (m*x - clearance - 895)):
+            return True, x,y
+    return False, None
+
+def get_inquality_obstacles(clearance):
     
-    # square 2
-    x2_c, y2_c = 10, 10 
-    s2 = 1 + 2*pad
+    obstacle_xy_list = []
 
-    # square 2
-    if(y <= y2_c + math.ceil(s2/2)  and y >= y2_c - math.ceil(s2/2) and x <= x2_c + math.ceil(s2/2) and x >= x2_c - math.ceil(s2/2)):
-        c = 1
-    
-    # circle
-    if ((x-math.ceil(x_circ))**2 + math.ceil(y -(y_circ))**2 - math.ceil(r_circ + pad)**2)<=0:
-        c=1
-    
-    # square 1
-    if(y <= y_c + s1/2 + pad and y >= y_c - s1/2 - pad and x <= x_c + s1/2 + pad and x >= x_c - s1/2 - pad):
-        c = 1
+    for x in range(tab_width + 1):
+        for y in range(tab_height + 1):
+            
+            if(wall(x,y, clearance)[0]):
+                obstacle_xy_list.append((x,y))
+            elif (rect_top(x,y, clearance)[0]):
+                obstacle_xy_list.append((x,y))
+            elif (rect_bottom(x,y,clearance)[0]):
+                obstacle_xy_list.append((x,y))
+            elif (hexagon(x,y,clearance)[0]):
+                obstacle_xy_list.append((x,y))
+            elif (triangle(x,y,clearance)[0]):
+                obstacle_xy_list.append((x,y))
 
-    return c
-
-def obs(pad):
-    obs_space = []
-    for i in range(0,tab_height):
-        for j in range(0,tab_width):
-            q = obstacle_space(i,j, pad)
-            if q == 1:
-                obs_space.append(tuple((i,j)))
-    return obs_space
-
+    return obstacle_xy_list
 
 class Dijkstra:
     def __init__(self, start, goal, obstacles):
@@ -106,7 +125,7 @@ class Dijkstra:
         path.append(self.start)
         path.reverse()
 
-        self.vis(path, self.visited)
+        visualise(self.obstacles, self.visited, path)
         return path
     
     def neighbors(self, coord):
@@ -122,7 +141,7 @@ class Dijkstra:
         
         valid_sucessors = []
         for n in sucessors:
-            if obstacle_space(n[0][0], n[0][1], clearance) == 0 and\
+            if n[0] not in self.obstacles and\
                     0 <= n[0][0] and n[0][0] < tab_width and\
                             0 <= n[0][1] and n[0][1] < tab_height:
                 
@@ -177,98 +196,76 @@ class Dijkstra:
         neighbor = (x - 1, y + 1)
         cost = 1.4 
         return neighbor, cost
+
+
+
+def visualise(obstacle_points, visited, path):
     
-    def vis(self, path, visited):
-        
-        pygame.init()
+    White = (255, 255, 255)
+    Blue = (255, 0, 0)
+    Green = (0, 255, 0)
+    Red = (0, 0, 255)
 
-        #Defining the colors
-        Black = [0, 0, 0]
-        red = [255, 0, 0]
-        green = [0, 255, 0]
-        Blue = [0, 100, 255]
-        White = [255, 255, 255]
+    # Create a black background image
+    img = np.zeros((tab_height, tab_width, 3), np.uint8)
 
-        #Height and Width of Display
-        SIZE = [600,250]
-        window = pygame.display.set_mode(SIZE)
-        pygame.display.set_caption("OUTPUT")
-        surface = pygame.Surface(SIZE)
-        
-        clock = pygame.time.Clock()
+    # Visualise padded obstacles
+    obstacle_points = get_inquality_obstacles(5)
+    for point in obstacle_points:
+        cv2.rectangle(img, (point[0], point[1]), (point[0]+1, point[1]+1), White, -1)
+    
+    # Visualise original obstacles
+    obstacle_points = get_inquality_obstacles(0)
+    for point in obstacle_points:
+        cv2.rectangle(img, (point[0], point[1]), (point[0]+1, point[1]+1), Blue, -1)
 
-        surface.fill(White)
+    # Visited
+    for point in visited:
+        cv2.rectangle(img, (point[0], point[1]), (point[0]+1, point[1]+1), Green, -1)
+        cv2.imshow("Dijkstra", img)
+        cv2.waitKey(1)
 
-        occupied = obs(0)
-        
-        for i in occupied:
-            pygame.draw.rect(surface, red, [i[0] , tab_height - i[1] , clearance, clearance])
-            window.blit(surface,(0,0))
-            pygame.display.update()
-
-
-            #Printing the visited nodes
-        for i in visited:
-            pygame.draw.rect(surface, green, [i[0], tab_height - i[1],1,1])
-            window.blit(surface,(0,0))
-            pygame.display.update()
-        #pygame.display.flip()
-
-            #Printing the path
-        for j in path:
-            pygame.draw.rect(surface, Black, [j[0], tab_height - j[1], 1,1])
-            window.blit(surface,(0,0))
-            pygame.display.update()
-        #pygame.display.flip()
-
-        
-        
-        pygame.display.flip()
-
-        window.blit(surface,(0,0))
-
-        done = False
-        while not done:
-            for event in pygame.event.get():   
-                if event.type == pygame.QUIT:  
-                    done = True   
-
-            pygame.display.flip()
-            clock.tick(5)
-
-        pygame.quit()
-
-
-
-
+    # Path
+    for point in path:
+        cv2.rectangle(img, (point[0], point[1]), (point[0]+1, point[1]+1), Red, -1)
+        cv2.imshow("Dijkstra", img)
+        cv2.waitKey(1)
+    
+    #cv2.destroyAllWindows()
+    time.sleep(5)
+    cv2.waitKey(100)
 
 
 def main():
 
-    #generate obstacles
-    occupied = obs(clearance)
+    # Generate obstacles with clearance of '5'
+    occupied = get_inquality_obstacles(5)
 
-    # get start pos from user
+    # Get start pos from user
     start_x = int(input("Enter start x coordinate: "))
     start_y = int(input("Enter start y coordinate: "))
+    # Change origin
+    start_y = tab_height - start_y
     start = (start_x, start_y)
     
-    if obstacle_space(start[0], start[1], clearance) == 1:
+    if start in occupied:
         print("start position occupied. Please enter a valid position and run code again.")
         return
-    elif 0 < start[0] and start[0] >= 600 and 0 < start[1] and start[1] >= 250:
+    elif 0 < start[0] and start[0] >= tab_width and 0 < start[1] and start[1] >= tab_height:
         print("start position out of bounds. Please enter a valid position and run code again.")
         return
         
     # get goal pos from user
     goal_x = int(input("Enter goal x coordinate: "))
     goal_y = int(input("Enter goal y coordinate: "))
+    # Change origin
+    goal_y = tab_height - goal_y
     goal = (goal_x, goal_y)
 
-    if obstacle_space(goal[0], goal[1], clearance) == 1:
+    if goal in occupied:
         print("goal position occupied. Please enter a valid position and run code again.")
         return
-    elif 0 < goal[0] and goal[0] >= 600 and 0 < goal[1] and goal[1] >= 250:
+    elif 0 < goal[0] and goal[0] >= tab_width and 0 < goal[1] and goal[1] >= tab_height:
         print("goal position out of bounds. Please enter a valid position and run code again.")
             
             

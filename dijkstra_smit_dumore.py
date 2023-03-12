@@ -30,12 +30,12 @@ def hexagon(x,y, clearance):
     # ratio of the radius of a circumscribed circle to the length of the side of a regular hexagon
     a = 1 / math.sqrt(3) 
 
-    if( (y <= (-a*x + clearance + 37321/100)) and \
-        (y >= (a*x - clearance - 12321/100)) and \
-        (y >= (-a*x - clearance + 22321/100)) and \
+    if( (y <= (-a*x + clearance + 1866/5)) and \
+        (y >= (a*x - clearance - 616/5)) and \
+        (y >= (-a*x - clearance + 1116/5)) and \
         (y <= (a*x + clearance + 2679/100)) and \
         (x <= (clearance + 7299/20)) and \
-        (x >= (- clearance + 235))) :
+        (x >= (-clearance + 235))) :
         
             return True, x,y
     return False, None
@@ -232,7 +232,7 @@ def visualise(obstacle_points, visited, path):
         cv2.waitKey(1)
     
     #cv2.destroyAllWindows()
-    time.sleep(5)
+    time.sleep(50)
     cv2.waitKey(100)
 
 

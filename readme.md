@@ -7,6 +7,9 @@
 1. python3
 2. numpy
 3. opencv
+4. time
+5. math
+6. heapq
 
 ## Github link
 https://github.com/smitdumore/dijkstra
